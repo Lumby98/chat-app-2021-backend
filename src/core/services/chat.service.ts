@@ -33,22 +33,26 @@ export class ChatService implements IChatService {
     };
   }
 
-  async newClient(id: string, nickname: string): Promise<ChatClient> {
-    const clientDB = await this.clientRepository.findOne({
-      nickname: nickname,
+  async newClient(chatClient: ChatClient): Promise<ChatClient> {
+    const chatClientFoundById = await this.clientRepository.findOne({
+      id: chatClient.id,
     });
-    if (!clientDB) {
-      let client = this.clientRepository.create();
-      client.id = id;
-      client.nickname = nickname;
-      client = await this.clientRepository.save(client);
-      return { id: client.id, nickname: client.nickname };
+    if (chatClientFoundById) {
+      return JSON.parse(JSON.stringify(chatClientFoundById));
     }
-    if (clientDB.id == id) {
-      return { id: clientDB.id, nickname: clientDB.nickname };
-    } else {
+
+    const chatClientFoundByNickname = await this.clientRepository.findOne({
+      nickname: chatClient.nickname,
+    });
+    if (chatClientFoundByNickname) {
       throw new Error('This nickname is already in use');
     }
+    let client = this.clientRepository.create();
+    client.nickname = chatClient.nickname;
+    client = await this.clientRepository.save(client);
+    const newChatClient = JSON.parse(JSON.stringify(client));
+    this.clients.push(newChatClient);
+    return newChatClient;
   }
 
   async getClients(): Promise<ChatClient[]> {
